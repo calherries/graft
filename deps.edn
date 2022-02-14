@@ -1,0 +1,2 @@
+{:deps {hyperfiddle/rcf {:git/url "https://github.com/hyperfiddle/rcf.git"
+                         :sha "af197a85749898e76262d488a245d23748c38edb"}}}
