@@ -46,30 +46,33 @@
               (cond
                 (map? field)
                 ; join
-                (let [[foreign-key foreign-fields] (first field)
-                      foreign-ids                  (get entity foreign-key)]
-                  [foreign-key (q db (for [foreign-id foreign-ids]
-                                       [foreign-id foreign-fields]))])
+                (let [[foreign-key
+                       foreign-fields] (first field)
+                      foreign-ids      (get entity foreign-key)
+                      nested-query     (for [foreign-id foreign-ids]
+                                         [foreign-id foreign-fields])]
+                  [foreign-key (q db nested-query)])
                 :else
                 [field (get entity field)]))))))
 
 (comment
-  (def db (db-with (empty-db) [#:person{:id   1
-                                        :name "Fred"
-                                        :age  52
-                                        :pets [[:animal/id 3]
-                                               [:animal/id 4]]}
-                               #:person{:id   2
-                                        :name "Dr. Rich"
-                                        :age  25}
-                               #:person{:id   2
-                                        :name "Jessica"}
-                               #:animal{:id   3
-                                        :name "Catso"
-                                        :vet  [[:person/id 2]]}
-                               #:animal{:id   4
-                                        :name "Doggy"
-                                        :vet  [[:person/id 2]]}]))
+  (def db (db-with (empty-db)
+                   [#:person{:id   1
+                             :name "Fred"
+                             :age  52
+                             :pets [[:animal/id 3]
+                                    [:animal/id 4]]}
+                    #:person{:id   2
+                             :name "Dr. Rich"
+                             :age  25}
+                    #:person{:id   2
+                             :name "Jessica"}
+                    #:animal{:id   3
+                             :name "Catso"
+                             :vet  [[:person/id 2]]}
+                    #:animal{:id   4
+                             :name "Doggy"
+                             :vet  [[:person/id 2]]}]))
 
   (q db {[:person/id 1] [:person/name :person/age]})
   (q db {[:animal/id 3] [:animal/name]})
