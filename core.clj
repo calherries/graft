@@ -36,8 +36,6 @@
    {}
    entities))
 
-
-
 (defn q
   "Queries the database. Supports multiple joins"
   [db query]
@@ -56,25 +54,26 @@
                 [field (get entity field)]))))))
 
 (comment
-  (def db (db-with (empty-db) [{:person/id   1
-                                :person/name "Fred"
-                                :person/age  52
-                                :person/pets [[:animal/id 3]
-                                              [:animal/id 4]]}
-                               {:person/id   2
-                                :person/name "Dr. Rich"
-                                :person/age  25}
-                               {:person/id   2
-                                :person/name "Jessica"}
-                               {:animal/id   3
-                                :animal/name "Catso"
-                                :animal/vet  [[:person/id 2]]}
-                               {:animal/id   4
-                                :animal/name "Doggy"
-                                :animal/vet  [[:person/id 2]]}]))
+  (def db (db-with (empty-db) [#:person{:id   1
+                                        :name "Fred"
+                                        :age  52
+                                        :pets [[:animal/id 3]
+                                               [:animal/id 4]]}
+                               #:person{:id   2
+                                        :name "Dr. Rich"
+                                        :age  25}
+                               #:person{:id   2
+                                        :name "Jessica"}
+                               #:animal{:id   3
+                                        :name "Catso"
+                                        :vet  [[:person/id 2]]}
+                               #:animal{:id   4
+                                        :name "Doggy"
+                                        :vet  [[:person/id 2]]}]))
 
   (q db {[:person/id 1] [:person/name :person/age]})
   (q db {[:animal/id 3] [:animal/name]})
+  (q db {[:animal/id 3] [:animal/field-that-doesnt-exist]})
   (q db {[:person/id 1] [:person/age
                          {:person/pets [:animal/name]}]})
   (= (q db {[:person/id 1] [:person/age
@@ -92,21 +91,30 @@
   )
 
 (defn transact! [db transaction]
-  "Updates the database with data."
+  "Updates the database."
   (reduce
-   (fn [db' [id operation-map]]
-     (reduce
-      (fn [db'' [operation args]]
-        (case operation
-          :add (update db'' id merge args)))
-      db'
-      operation-map))
+   (fn [db' [operation id & args]]
+     (case operation
+       :merge   (update db' id merge (first args))
+       :dissocs (apply update db' id dissoc (first args))
+       :delete  (dissoc db' id))) ; WIP needs to remove foreign keys
    db
    transaction))
 
 (comment
   (-> db
-      (transact! {[:person/id 1] {:add {:person/name "Freddy"}}})
+      (transact! [[:merge [:person/id 1] {:person/name "Freddy"}]])
       (q {[:person/id 1] [:person/name]}))
   ;; => (#:person{:name "Freddy"})
+
+  (-> db
+      (transact! [[:dissocs [:person/id 1] [:person/name]]])
+      (q {[:person/id 1] [:person/name]}))
+  ;; => (#:person{:name nil})
+
+  (-> db
+      (transact! [[:delete [:person/id 1]]])
+      (q {[:person/id 1] [:person/name]}))
+  ;; => (#:person{:name nil})
+
   )
