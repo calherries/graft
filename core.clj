@@ -80,11 +80,8 @@
                 ; join
                 (let [[foreign-key foreign-fields] (first field)
                       foreign-ids                  (get entity foreign-key)]
-                  [foreign-key (for [foreign-id foreign-ids]
-                                 (let [foreign-entity (get db foreign-id)]
-                                   (into {}
-                                         (for [foreign-field foreign-fields]
-                                           [foreign-field (get foreign-entity foreign-field)]))))])
+                  [foreign-key (q db (for [foreign-id foreign-ids]
+                                       [foreign-id foreign-fields]))])
                 :else
                 [field (get entity field)]))))))
 
