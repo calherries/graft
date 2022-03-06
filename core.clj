@@ -12,7 +12,8 @@
          (int? id-value))))
 
 (defn shape [entity]
-  (if (map? entity)
+  (cond
+    (map? entity)
     (vec (for [[k v] entity]
            (cond
              (map? v)
@@ -21,7 +22,7 @@
              {k (shape v)}
              :else
              k)))
-    ;; else vector?
+    (vector? entity)
     (shape (first entity))))
 
 ;; API
@@ -39,7 +40,7 @@
 (defn q
   "Queries the database. Supports multiple joins"
   [db query]
-  (for [[id query-fields] query] ; assume every top-leve key is an id
+  (for [[id query-fields] query] ; assume every top-level key is an id
     (let [entity (get db id)]
       (into {}
             (for [field query-fields]
