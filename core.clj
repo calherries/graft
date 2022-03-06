@@ -39,13 +39,12 @@
 (defn q
   "Queries the database. Supports multiple joins"
   [db query]
-  (for [[id query-fields] query] ; assume every key is an id
+  (for [[id query-fields] query] ; assume every top-leve key is an id
     (let [entity (get db id)]
       (into {}
             (for [field query-fields]
               (cond
-                (map? field)
-                ; join
+                (map? field) ; join
                 (let [[foreign-key
                        foreign-fields] (first field)
                       foreign-ids      (get entity foreign-key)
@@ -54,6 +53,17 @@
                   [foreign-key (q db nested-query)])
                 :else
                 [field (get entity field)]))))))
+
+(defn transact! [db transaction]
+  "Updates the database."
+  (reduce
+   (fn [db' [operation id & args]]
+     (case operation
+       :merge   (update db' id merge (first args))
+       :dissocs (apply update db' id dissoc (first args))
+       :delete  (dissoc db' id))) ; WIP needs to remove foreign keys
+   db
+   transaction))
 
 (comment
   (def db (db-with (empty-db)
@@ -92,17 +102,6 @@
   ;;                     #:animal{:name "Doggy", :vet (#:person{:name "Jessica"})})})
 
   )
-
-(defn transact! [db transaction]
-  "Updates the database."
-  (reduce
-   (fn [db' [operation id & args]]
-     (case operation
-       :merge   (update db' id merge (first args))
-       :dissocs (apply update db' id dissoc (first args))
-       :delete  (dissoc db' id))) ; WIP needs to remove foreign keys
-   db
-   transaction))
 
 (comment
   (-> db
