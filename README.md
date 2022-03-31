@@ -24,10 +24,10 @@ Usage:
 
 ;; Recursive queries
 (q db {[:person/id 1] [:person/name
-                        {:person/pets [:animal/name
-                                    {:animal/vet [:person/name]}]}]})
+                       {:person/pets [:animal/name
+                                      {:animal/vet [:person/name]}]}]})
 ;; => (#:person{:name "Fred",
-;;      :pets (#:animal{:name "Catso", :vet (#:person{:name "Jessica"})}
+;;              :pets (#:animal{:name "Catso", :vet (#:person{:name "Jessica"})}
 ;;                     #:animal{:name "Doggy", :vet (#:person{:name "Jessica"})})})
 
 ;; Adding data
