@@ -30,7 +30,9 @@
 (defn empty-db []
   {})
 
-(defn db-with [db entities]
+(defn db-with
+  "Adds entities to the database."
+  [db entities]
   (reduce
    (fn [db entity]
      (assoc db (entity-ref entity) entity)
@@ -62,7 +64,7 @@
      (case operation
        :merge   (update db' id merge (first args))
        :dissocs (apply update db' id dissoc (first args))
-       :delete  (dissoc db' id))) ; WIP needs to remove foreign keys
+       :delete  (dissoc db' id)))
    db
    transaction))
 
@@ -70,14 +72,10 @@
   (def db (db-with (empty-db)
                    [#:person{:id   1
                              :name "Fred"
-                             :age  52
                              :pets [[:animal/id 3]
                                     [:animal/id 4]]}
                     #:person{:id   2
-                             :name "Dr. Rich"
-                             :age  25}
-                    #:person{:id   2
-                             :name "Jessica"}
+                             :name "Rich Hickey"}
                     #:animal{:id   3
                              :name "Catso"
                              :vet  [[:person/id 2]]}
@@ -95,16 +93,15 @@
      '(#:person{:age 52, :pets (#:animal{:name "Catso"} #:animal{:name "Doggy"})}))
 
   ;; recursive query
-  (q db {[:person/id 1] [:person/age
+  (q db {[:person/id 1] [:person/name
                          {:person/pets [:animal/name
                                         {:animal/vet [:person/name]}]}]})
-  ;; => (#:person{:age 52,
+  ;; => (#:person{:name "Fred",
   ;;      :pets (#:animal{:name "Catso", :vet (#:person{:name "Jessica"})}
   ;;                     #:animal{:name "Doggy", :vet (#:person{:name "Jessica"})})})
 
-  )
+  (def db (empty-db))
 
-(comment
   (-> db
       (transact! [[:merge [:person/id 1] {:person/name "Freddy"}]])
       (q {[:person/id 1] [:person/name]}))
