@@ -23,7 +23,7 @@ Usage:
                              :vet  [[:person/id 2]]}]))
 
 ;; Recursive queries
-(q db {[:person/id 1] [:person/name
+(g/q db {[:person/id 1] [:person/name
                        {:person/pets [:animal/name
                                       {:animal/vet [:person/name]}]}]})
 ;; => (#:person{:name "Fred",
