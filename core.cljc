@@ -26,18 +26,18 @@
 (defn q
   "Queries the database recursively."
   [db query]
-  (for [[r cs] query]                           ; every top-level key is an entity ref
-    (let [e (get db r)]                         ; get the entity
-      (into {} (for [c cs]                      ; for each connection
-                 (cond
-                   (map? c)                      ; if c is a join
-                   (let [[c' jcs] (first c)      ; c' is a field and jcs is a list of join cs
-                         jrs      (get e c')     ; joined entity refs
-                         jquery   (into {} (map #(vector %1 jcs) jrs))
-                         jres     (q db jquery)] ; get the results of the nested query
-                     [c' jres])
-                   (keyword? c)                 ; if c is a field
-                   [c (get e c)]))))))          ; the field value from the entity
+  (vec
+   (for [[r cs] query]                            ; every top-level key is an entity ref
+     (let [e (get db r)]                          ; get the entity
+       (into {} (for [c cs]                       ; for each connection
+                  (cond
+                    (map? c)                      ; if c is a join
+                    (let [[c' jcs] (first c)      ; c' is a field and jcs is a list of join cs
+                          jrs      (get e c')     ; joined entity refs
+                          jquery   (into {} (map #(vector %1 jcs) jrs))] ; query for each joined entity
+                      [c' (q db jquery)])         ; recursively query
+                    (keyword? c)                  ; if c is a field
+                    [c (get e c)])))))))          ; the field value from the entity
 
 (defn transact
   "Updates the database with a transaction t"
@@ -79,11 +79,9 @@
   (q db {[:person/id 1] [:person/name
                          {:person/pets [:animal/name
                                         {:animal/vet [:person/name]}]}]})
-
   ;; => (#:person{:name "Fred",
   ;;      :pets (#:animal{:name "Catso", :vet (#:person{:name "Rich Hickey"})}
-  ;;                     #:animal{:name "Doggy",
-  ;;                      :vet (#:person{:name "Rich Hickey"})})})
+  ;;             #:animal{:name "Doggy", :vet (#:person{:name "Rich Hickey"})})})
 
   (def db empty-db)
 
