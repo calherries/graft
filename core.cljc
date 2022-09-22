@@ -73,31 +73,31 @@
                          {:person/pets [:animal/name]}]})
   (= (q db {[:person/id 1] [:person/name
                             {:person/pets [:animal/name]}]})
-     '(#:person{:name "Fred", :pets (#:animal{:name "Catso"} #:animal{:name "Doggy"})}))
+     [#:person{:name "Fred", :pets [#:animal{:name "Catso"} #:animal{:name "Doggy"}]}])
 
   ;; recursive query
   (q db {[:person/id 1] [:person/name
                          {:person/pets [:animal/name
                                         {:animal/vet [:person/name]}]}]})
-  ;; => (#:person{:name "Fred",
-  ;;      :pets (#:animal{:name "Catso", :vet (#:person{:name "Rich Hickey"})}
-  ;;             #:animal{:name "Doggy", :vet (#:person{:name "Rich Hickey"})})})
+  ;; => [#:person{:name "Fred",
+  ;;              :pets [#:animal{:name "Catso", :vet (#:person{:name "Rich Hickey"})}
+  ;;                     #:animal{:name "Doggy", :vet (#:person{:name "Rich Hickey"})}]}]
 
   (def db empty-db)
 
   (-> db
       (transact [[:merge [:person/id 1] {:person/name "Freddy"}]])
       (q {[:person/id 1] [:person/name]}))
-  ;; => (#:person{:name "Freddy"})
+  ;; => [#:person{:name "Freddy"}]
 
   (-> db
       (transact [[:dissoc [:person/id 1] :person/name :person/pets]])
       (q {[:person/id 1] [:person/name :person/pets]}))
-  ;; => (#:person{:name nil})
+  ;; => [#:person{:name nil}]
 
   (-> db
       (transact [[:delete [:person/id 1]]])
       (q {[:person/id 1] [:person/name]}))
-  ;; => (#:person{:name nil})
+  ;; => [#:person{:name nil}]
 
   )
