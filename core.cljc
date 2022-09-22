@@ -12,7 +12,7 @@
                             jq       (into {} (map #(vector % jcs) jrs))] ; query for each joined entity
                         [c' (query db jq)])                               ; recursively query
                       (keyword? c)                                        ; if c is a field
-                      [c (get-in db [r c])]))))))                         ; the field value from the entity
+                      [c (get-in db [r c])]))))))                         ; return the value from the entity
 
 (defn transact
   "Updates the database with commands. Commands are s-exp vectors with :create, :merge, :dissoc, or :delete as the first element"
