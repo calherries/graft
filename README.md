@@ -1,6 +1,6 @@
 # Graft
 
-A tiny implementation of an in-memory graph database that supports EQL queries (30 LOC).
+A 30 LOC in-memory graph database implementation. Supports EQL queries.
 
 Usage:
 ```clojure
