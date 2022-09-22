@@ -27,16 +27,15 @@
 
 ;; API
 
-(defn empty-db []
-  {})
+(def empty-db {})
 
 (defn db-with
   "Adds entities to the database."
   [db entities]
   (reduce
    (fn [db entity]
-     (assoc db (entity-ref entity) entity)
-   {}
+     (assoc db (entity-ref entity) entity))
+   db
    entities))
 
 (defn q
@@ -57,8 +56,9 @@
                 :else
                 [field (get entity field)]))))))
 
-(defn transact! [db transaction]
+(defn transact!
   "Updates the database."
+  [db transaction]
   (reduce
    (fn [db' [operation id & args]]
      (case operation
@@ -69,7 +69,7 @@
    transaction))
 
 (comment
-  (def db (db-with (empty-db)
+  (def db (db-with empty-db
                    [#:person{:id   1
                              :name "Fred"
                              :pets [[:animal/id 3]
@@ -83,7 +83,7 @@
                              :name "Doggy"
                              :vet  [[:person/id 2]]}]))
 
-  (q db {[:person/id 1] [:person/name :person/age]})
+  (q db {[:person/id 1] [:person/name]})
   (q db {[:animal/id 3] [:animal/name]})
   (q db {[:animal/id 3] [:animal/field-that-doesnt-exist]})
   (q db {[:person/id 1] [:person/age
@@ -100,7 +100,7 @@
   ;;      :pets (#:animal{:name "Catso", :vet (#:person{:name "Jessica"})}
   ;;                     #:animal{:name "Doggy", :vet (#:person{:name "Jessica"})})})
 
-  (def db (empty-db))
+  (def db empty-db)
 
   (-> db
       (transact! [[:merge [:person/id 1] {:person/name "Freddy"}]])
