@@ -5,20 +5,20 @@ A 30 LOC in-memory graph database implementation. Supports EQL queries.
 Usage:
 ```clojure
 ;; Add some data to an empty db
-(def db (-> {}
-            (transact [:create
-                       #:person{:id   1
-                                :name "Fred"
-                                :pets [[:animal/id 3]
-                                       [:animal/id 4]]}
-                       #:person{:id   2
-                                :name "Rich Hickey"}
-                       #:animal{:id   3
-                                :name "Catso"
-                                :vet  [[:person/id 2]]}
-                       #:animal{:id   4
-                                :name "Doggy"
-                                :vet  [[:person/id 2]]}])))
+(def db (transact {} [:create
+                      #:person{:id   1
+                               :name "Fred"
+                               :pets [[:animal/id 3]
+                                      [:animal/id 4]]}
+                      #:person{:id   2
+                               :name "Rich Hickey"}
+                      #:animal{:id   3
+                               :name "Catso"
+                               :vet  [[:person/id 2]]}
+                      #:animal{:id   4
+                               :name "Doggy"
+                               :vet  [[:person/id 2]]}]))
+
 ;; Recursive query
 (query db {[:person/id 1] [:person/name
                            {:person/pets [:animal/name
