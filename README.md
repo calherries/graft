@@ -8,7 +8,7 @@ Usage:
 ```clojure
 (require '[graft.core :as g])
 
-(def db (g/db-with (g/empty-db)
+(def db (g/db-with g/empty-db
                    [#:person{:id   1
                              :name "Fred"
                              :pets [[:animal/id 3]
