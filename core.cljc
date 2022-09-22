@@ -19,8 +19,7 @@
   [db & cs]
   (let [create (fn [db & es]
                  (reduce (fn [d e]
-                           (let [id?      #(= (name %) "id")
-                                 [idk id] (first (filter (comp id? key) e))]
+                           (let [[idk id] (first (filter #(= (name (key %)) "id") e))]
                              (assoc d [idk id] (dissoc e idk))))     ; remove idk from entity
                          db es))]
     (reduce (fn [d [o & xs]]
