@@ -18,9 +18,9 @@
   "Updates the database with commands. Commands are s-exp vectors with :create, :merge, :dissoc, or :delete as the first element"
   [db & cs]
   (let [create (fn [d & es]
-                 (reduce (fn [d e]
+                 (reduce (fn [d' e]
                            (let [[idk id] (first (filter #(= (name (key %)) "id") e))]
-                             (assoc d [idk id] (dissoc e idk))))
+                             (assoc d' [idk id] (dissoc e idk))))
                          d es))]
     (reduce (fn [d [o & xs]]
               (case o
