@@ -1,72 +1,55 @@
 (ns core)
 
-(defn entity-ref [entity]
-  (first (filter (fn [[k _]] (= (name k) "id")) entity)))
+(defn -entity-ref [e]
+  (let [id? (fn [k] (= (name k) "id"))]
+    (first (filter (comp id? key) e))))
 
-(defn entity-ref? [x]
-  (and (vector? x)
-       (= (count x) 2)
-       (let [[id-key id-value] x]
-         (and (keyword? id-key)
-              (= (name id-key) "id"))
-         (int? id-value))))
-
-(defn shape [entity]
-  (cond
-    (map? entity)
-    (vec (for [[k v] entity]
-           (cond
-             (map? v)
-             {k (shape v)}
-             (vector? v)
-             {k (shape v)}
-             :else
-             k)))
-    (vector? entity)
-    (shape (first entity))))
+(comment
+  (-entity-ref #:person{:id   1
+                        :name "Fred"
+                        :pets [[:animal/id 3]
+                               [:animal/id 4]]})
+  ;; => [:person/id 1]
+  )
 
 ;; API
-
-(def empty-db {})
 
 (defn db-with
   "Adds entities to the database."
   [db entities]
   (reduce
-   (fn [db entity]
-     (assoc db (entity-ref entity) entity))
+   (fn [db e]
+     (assoc db (-entity-ref e) e))
    db
    entities))
 
 (defn q
-  "Queries the database. Supports multiple joins"
+  "Queries the database recursively."
   [db query]
-  (for [[id query-fields] query] ; assume every top-level key is an id
-    (let [entity (get db id)]
-      (into {}
-            (for [field query-fields]
-              (cond
-                (map? field) ; join
-                (let [[foreign-key
-                       foreign-fields] (first field)
-                      foreign-ids      (get entity foreign-key)
-                      nested-query     (for [foreign-id foreign-ids]
-                                         [foreign-id foreign-fields])]
-                  [foreign-key (q db nested-query)])
-                :else
-                [field (get entity field)]))))))
+  (for [[r cs] query]                           ; every top-level key is an entity ref
+    (let [e (get db r)]                         ; get the entity
+      (into {} (for [c cs]                      ; for each connection
+                 (cond
+                   (map? c)                      ; if c is a join
+                   (let [[c' jcs] (first c)      ; c' is a field and jcs is a list of join cs
+                         jrs      (get e c')     ; joined entity refs
+                         jquery   (into {} (map #(vector %1 jcs) jrs))
+                         jres     (q db jquery)] ; get the results of the nested query
+                     [c' jres])
+                   (keyword? c)                 ; if c is a field
+                   [c (get e c)]))))))          ; the field value from the entity
 
-(defn transact!
-  "Updates the database."
-  [db transaction]
+(defn transact
+  "Updates the database with a transaction t"
+  [db t]
   (reduce
-   (fn [db' [operation id & args]]
-     (case operation
-       :merge   (update db' id merge (first args))
-       :dissocs (apply update db' id dissoc (first args))
-       :delete  (dissoc db' id)))
+   (fn [db' [o r & xs]]
+     (case o
+       :merge  (apply update db' r merge xs)
+       :dissoc (apply update db' r dissoc xs)
+       :delete (dissoc db' r)))
    db
-   transaction))
+   t))
 
 (comment
   (def db (db-with empty-db
@@ -88,32 +71,34 @@
   (q db {[:animal/id 3] [:animal/field-that-doesnt-exist]})
   (q db {[:person/id 1] [:person/age
                          {:person/pets [:animal/name]}]})
-  (= (q db {[:person/id 1] [:person/age
+  (= (q db {[:person/id 1] [:person/name
                             {:person/pets [:animal/name]}]})
-     '(#:person{:age 52, :pets (#:animal{:name "Catso"} #:animal{:name "Doggy"})}))
+     '(#:person{:name "Fred", :pets (#:animal{:name "Catso"} #:animal{:name "Doggy"})}))
 
   ;; recursive query
   (q db {[:person/id 1] [:person/name
                          {:person/pets [:animal/name
                                         {:animal/vet [:person/name]}]}]})
+
   ;; => (#:person{:name "Fred",
-  ;;      :pets (#:animal{:name "Catso", :vet (#:person{:name "Jessica"})}
-  ;;                     #:animal{:name "Doggy", :vet (#:person{:name "Jessica"})})})
+  ;;      :pets (#:animal{:name "Catso", :vet (#:person{:name "Rich Hickey"})}
+  ;;                     #:animal{:name "Doggy",
+  ;;                      :vet (#:person{:name "Rich Hickey"})})})
 
   (def db empty-db)
 
   (-> db
-      (transact! [[:merge [:person/id 1] {:person/name "Freddy"}]])
+      (transact [[:merge [:person/id 1] {:person/name "Freddy"}]])
       (q {[:person/id 1] [:person/name]}))
   ;; => (#:person{:name "Freddy"})
 
   (-> db
-      (transact! [[:dissocs [:person/id 1] [:person/name]]])
-      (q {[:person/id 1] [:person/name]}))
+      (transact [[:dissoc [:person/id 1] :person/name :person/pets]])
+      (q {[:person/id 1] [:person/name :person/pets]}))
   ;; => (#:person{:name nil})
 
   (-> db
-      (transact! [[:delete [:person/id 1]]])
+      (transact [[:delete [:person/id 1]]])
       (q {[:person/id 1] [:person/name]}))
   ;; => (#:person{:name nil})
 
