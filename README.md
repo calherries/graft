@@ -32,13 +32,13 @@ Usage:
 
 ;; Adding data
 (-> db
-    (g/transact! [[:merge [:person/id 1] {:person/name "Freddy"}]])
+    (g/transact [[:merge [:person/id 1] {:person/name "Freddy"}]])
     (g/q {[:person/id 1] [:person/name]}))
 ;; => (#:person{:name "Freddy"})
 
 ;; Removing data
 (-> db
-    (g/transact! [[:dissocs [:person/id 1] [:person/name]]])
+    (g/transact [[:dissoc [:person/id 1] :person/name]])
     (g/q {[:person/id 1] [:person/name]}))
 ;; => (#:person{:name nil})
 ```
