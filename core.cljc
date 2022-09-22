@@ -32,6 +32,7 @@
             db cs)))
 
 (comment
+  ;; Add some data to an empty db
   (def db (-> {}
               (transact [:create
                          #:person{:id   1
