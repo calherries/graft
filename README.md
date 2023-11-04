@@ -19,7 +19,7 @@ Usage:
                                :name "Doggy"
                                :vet  [[:person/id 2]]}]))
 
-;; Recursive query
+;; Query with joins
 (query db {[:person/id 1] [:person/name
                            {:person/pets [:animal/name
                                           {:animal/vet [:person/name]}]}]})
