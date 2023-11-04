@@ -27,13 +27,13 @@ Usage:
 ;;              :pets [#:animal{:name "Catso", :vet (#:person{:name "Rich Hickey"})}
 ;;                     #:animal{:name "Doggy", :vet (#:person{:name "Rich Hickey"})}]}]
 
-;; Add new facts to the database
+;; Add facts to the database
 (-> db
     (transact [:merge [:person/id 1] {:person/name "Freddy"}])
     (query {[:person/id 1] [:person/name]}))
 ;; => [#:person{:name "Freddy"}]
 
-;; Remove new facts from the database
+;; Remove facts from the database
 (-> db
     (transact [:dissoc [:person/id 1] :person/name :person/pets])
     (query {[:person/id 1] [:person/name :person/pets]}))
